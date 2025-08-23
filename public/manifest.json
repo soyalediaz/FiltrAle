@@ -1,0 +1,27 @@
+{
+  "name": "Filtrale - Editor de Fotos Rápido",
+  "short_name": "Filtrale",
+  "description": "Editor de fotos online que te permite agregar logos y marcas con efecto degradado en segundos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-filtrale.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Favicom.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["photo", "productivity", "utilities"],
+  "lang": "es",
+  "dir": "ltr"
+}
