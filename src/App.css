@@ -53,21 +53,17 @@ body {
   justify-content: center;
 }
 
-.logo-text {
-  font-size: 2.5rem;
-  font-weight: 800;
-  font-family: 'Poppins', sans-serif;
-  margin: 0;
-  letter-spacing: -0.02em;
-  line-height: 1;
+.logo-image {
+  height: 60px;
+  width: auto;
+  max-width: 300px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  transition: transform 0.3s ease;
 }
 
-.logo-main {
-  color: var(--white);
-}
-
-.logo-accent {
-  color: var(--secondary);
+.logo-image:hover {
+  transform: scale(1.05);
 }
 
 .header-subtitle p {
@@ -200,8 +196,9 @@ body {
     gap: 0.5rem;
   }
   
-  .logo-text {
-    font-size: 2rem;
+  .logo-image {
+    height: 50px;
+    max-width: 250px;
   }
   
   .header-subtitle p {
@@ -258,8 +255,9 @@ body {
     gap: 2rem;
   }
   
-  .logo-text {
-    font-size: 3rem;
+  .logo-image {
+    height: 70px;
+    max-width: 350px;
   }
 }
 

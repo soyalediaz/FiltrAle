@@ -66,13 +66,11 @@ function App() {
       <header className="app-header">
         <div className="header-content">
           <div className="logo-container">
-            <h1 className="logo-text">
-              <span className="logo-main">Filtr</span>
-              <span className="logo-accent">ale</span>
-            </h1>
-          </div>
-          <div className="header-subtitle">
-            <p>Transforma tus imágenes con estilo</p>
+            <img 
+              src="/logo-filtrale.webp" 
+              alt="Filtrale Logo" 
+              className="logo-image"
+            />
           </div>
         </div>
       </header>
