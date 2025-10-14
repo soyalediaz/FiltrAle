@@ -15,67 +15,105 @@ const ProcessedImages = ({ processedImages, processingImages }) => {
       // Crear nombre del archivo
       const filename = `filtro-foto-${index + 1}.png`
 
-      // Método moderno de descarga (Chrome, Edge, etc.)
-      if ('download' in document.createElement('a')) {
+      // Detectar si es móvil
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+
+      // Para iOS y Safari móvil - usar Canvas para forzar descarga
+      if (isMobile && (isIOS || isSafari)) {
+        // Crear una imagen desde el blob
+        const img = new Image()
+        const blobUrl = URL.createObjectURL(blob)
+        
+        img.onload = () => {
+          // Crear canvas con las dimensiones de la imagen
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0)
+          
+          // Convertir canvas a data URL
+          canvas.toBlob((canvasBlob) => {
+            const url = URL.createObjectURL(canvasBlob)
+            
+            // Crear link temporal
+            const link = document.createElement('a')
+            link.href = url
+            link.download = filename
+            link.style.display = 'none'
+            
+            // Simular click con evento táctil
+            document.body.appendChild(link)
+            
+            // Crear evento de click programático
+            const clickEvent = new MouseEvent('click', {
+              view: window,
+              bubbles: true,
+              cancelable: true
+            })
+            
+            link.dispatchEvent(clickEvent)
+            
+            // Limpiar después de un delay
+            setTimeout(() => {
+              document.body.removeChild(link)
+              URL.revokeObjectURL(url)
+              URL.revokeObjectURL(blobUrl)
+            }, 100)
+          }, 'image/png', 1.0)
+        }
+        
+        img.onerror = () => {
+          URL.revokeObjectURL(blobUrl)
+          // Fallback: abrir en nueva pestaña
+          window.open(imageData.processed, '_blank')
+        }
+        
+        img.src = blobUrl
+      }
+      // Para Android y otros móviles
+      else if (isMobile) {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
         link.download = filename
-
+        link.style.display = 'none'
+        
         document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-
-        URL.revokeObjectURL(url)
+        
+        // Forzar descarga con evento touch
+        const event = new MouseEvent('click', {
+          view: window,
+          bubbles: true,
+          cancelable: true
+        })
+        
+        link.dispatchEvent(event)
+        
+        setTimeout(() => {
+          document.body.removeChild(link)
+          URL.revokeObjectURL(url)
+        }, 100)
       }
-      // Método alternativo para móviles - abrir en nueva pestaña
-      else if (/Mobile|iP(hone|od|ad)|Android|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        // Para móviles, abrir en nueva pestaña y sugerir guardar
-        const url = URL.createObjectURL(blob)
-        const newTab = window.open(url, '_blank')
-
-        if (!newTab) {
-          // Si los popups están bloqueados, mostrar instrucciones
-          alert('Por favor, permita popups para descargar la imagen. Alternativamente, mantenga presionada la imagen y seleccione "Guardar imagen".')
-        } else {
-          // Mostrar instrucciones para guardar
-          setTimeout(() => {
-            alert('Imagen abierta en nueva pestaña. Use el menú del navegador para guardar la imagen.')
-          }, 1000)
-        }
-
-        // Limpiar URL después de un tiempo
-        setTimeout(() => URL.revokeObjectURL(url), 30000)
-      }
-      // Método alternativo para navegadores antiguos
+      // Para desktop
       else {
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
         link.download = filename
-        link.target = '_blank'
-        link.rel = 'noopener noreferrer'
-
+        
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
-
+        
         URL.revokeObjectURL(url)
       }
     } catch (error) {
       console.error('Error descargando imagen:', error)
-
-      // Fallback: abrir en nueva pestaña
-      try {
-        const newTab = window.open(imageData.processed, '_blank')
-        if (!newTab) {
-          alert('Por favor, permita popups para descargar la imagen. Alternativamente, mantenga presionada la imagen y seleccione "Guardar imagen".')
-        } else {
-          alert('Imagen abierta en nueva pestaña. Use "Guardar imagen" del menú del navegador.')
-        }
-      } catch {
-        alert('Error al descargar la imagen. Intente mantener presionada la imagen y seleccionar "Guardar imagen".')
-      }
+      alert('Error al descargar. Intente mantener presionada la imagen y seleccionar "Guardar imagen".')
     }
   }
 
@@ -99,14 +137,29 @@ const ProcessedImages = ({ processedImages, processingImages }) => {
     setIsDownloadingAll(true)
 
     try {
-      // Descargar todas las imágenes una por una con delay
-      for (let i = 0; i < processedImages.length; i++) {
-        await handleDownload(processedImages[i], i)
-        if (i < processedImages.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500))
+      // Detectar si es móvil
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      
+      if (isMobile) {
+        // En móviles, descargar con delay más largo para evitar bloqueos
+        for (let i = 0; i < processedImages.length; i++) {
+          await handleDownload(processedImages[i], i)
+          // Delay más largo en móviles para dar tiempo al navegador
+          if (i < processedImages.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          }
+        }
+      } else {
+        // En desktop, descarga más rápida
+        for (let i = 0; i < processedImages.length; i++) {
+          await handleDownload(processedImages[i], i)
+          if (i < processedImages.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300))
+          }
         }
       }
-      alert(`${processedImages.length} imagen(es) descargada(s) exitosamente!`)
+      
+      alert(`${processedImages.length} imagen(es) procesada(s). Revise su carpeta de descargas.`)
     } catch (error) {
       console.error('Error descargando imágenes:', error)
       alert('Error al descargar las imágenes. Intente descargarlas individualmente.')

@@ -29,7 +29,7 @@
 }
 
 .downloadAllBtn {
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -188,7 +188,7 @@
 }
 
 .downloadBtn {
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: var(--white);
   border: none;
   padding: 0.8rem 1.2rem;
@@ -557,7 +557,7 @@
 }
 
 .modalDownloadBtn {
-  background: var(--gradient-primary);
+  background: var(--primary-color);
   color: white;
   border: none;
   padding: 12px 24px;
