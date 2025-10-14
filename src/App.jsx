@@ -11,7 +11,6 @@ function App() {
   const [gradientIntensity, setGradientIntensity] = useState(0.5)
   const [gradientColor, setGradientColor] = useState('#000000')
   const [logoPosition, setLogoPosition] = useState('bottom')
-  const [isDownloading, setIsDownloading] = useState(false)
   const [processingImages, setProcessingImages] = useState(new Set())
 
   const handleImagesUpload = useCallback((uploadedImages) => {
@@ -55,36 +54,6 @@ function App() {
     })
   }, [])
 
-  const handleDownloadAll = async () => {
-    setIsDownloading(true)
-    
-    try {
-      // En móviles, descargar una por una con delay
-      for (let i = 0; i < processedImages.length; i++) {
-        const item = processedImages[i]
-        const link = document.createElement('a')
-        link.download = `filtro-foto-${i + 1}.png`
-        link.href = item.processed
-        
-        // Agregar al DOM temporalmente
-        document.body.appendChild(link)
-        link.click()
-        
-        // Remover del DOM
-        document.body.removeChild(link)
-        
-        // Delay entre descargas para evitar bloqueos en móvil
-        if (i < processedImages.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500))
-        }
-      }
-    } catch (error) {
-      console.error('Error descargando imágenes:', error)
-      alert('Error al descargar las imágenes. Por favor, intenta de nuevo.')
-    } finally {
-      setIsDownloading(false)
-    }
-  }
 
   const handleClearAll = () => {
     // Limpiar todas las URLs
@@ -123,8 +92,6 @@ function App() {
               <section className="results-section">
                 <ProcessedImages
                   processedImages={processedImages}
-                  onDownloadAll={handleDownloadAll}
-                  isDownloading={isDownloading}
                   processingImages={processingImages}
                 />
               </section>
