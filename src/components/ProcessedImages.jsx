@@ -8,112 +8,131 @@ const ProcessedImages = ({ processedImages, processingImages }) => {
 
   const handleDownload = async (imageData, index) => {
     try {
-      // Convertir blob URL a blob real
-      const response = await fetch(imageData.processed)
-      const blob = await response.blob()
-
       // Crear nombre del archivo
       const filename = `filtro-foto-${index + 1}.png`
-
+      
       // Detectar si es móvil
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-
-      // Para iOS y Safari móvil - usar Canvas para forzar descarga
-      if (isMobile && (isIOS || isSafari)) {
-        // Crear una imagen desde el blob
-        const img = new Image()
-        const blobUrl = URL.createObjectURL(blob)
-        
+      
+      // Obtener la imagen del blob URL
+      const response = await fetch(imageData.processed)
+      const blob = await response.blob()
+      
+      // Crear imagen desde el blob
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      const blobUrl = URL.createObjectURL(blob)
+      
+      return new Promise((resolve, reject) => {
         img.onload = () => {
-          // Crear canvas con las dimensiones de la imagen
-          const canvas = document.createElement('canvas')
-          canvas.width = img.width
-          canvas.height = img.height
-          
-          const ctx = canvas.getContext('2d')
-          ctx.drawImage(img, 0, 0)
-          
-          // Convertir canvas a data URL
-          canvas.toBlob((canvasBlob) => {
-            const url = URL.createObjectURL(canvasBlob)
+          try {
+            // Crear canvas para reprocessar la imagen
+            const canvas = document.createElement('canvas')
+            canvas.width = img.width
+            canvas.height = img.height
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(img, 0, 0)
             
-            // Crear link temporal
-            const link = document.createElement('a')
-            link.href = url
-            link.download = filename
-            link.style.display = 'none'
-            
-            // Simular click con evento táctil
-            document.body.appendChild(link)
-            
-            // Crear evento de click programático
-            const clickEvent = new MouseEvent('click', {
-              view: window,
-              bubbles: true,
-              cancelable: true
-            })
-            
-            link.dispatchEvent(clickEvent)
-            
-            // Limpiar después de un delay
-            setTimeout(() => {
-              document.body.removeChild(link)
-              URL.revokeObjectURL(url)
-              URL.revokeObjectURL(blobUrl)
-            }, 100)
-          }, 'image/png', 1.0)
+            // Para iOS y Safari: usar canvas.toDataURL
+            if (isIOS) {
+              try {
+                // Intentar descargar con data URL
+                const dataUrl = canvas.toDataURL('image/png', 1.0)
+                const link = document.createElement('a')
+                link.href = dataUrl
+                link.download = filename
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+                
+                URL.revokeObjectURL(blobUrl)
+                resolve()
+              } catch (err) {
+                console.error('Error con dataURL, intentando con blob', err)
+                // Fallback a blob
+                canvas.toBlob((canvasBlob) => {
+                  if (canvasBlob) {
+                    const url = URL.createObjectURL(canvasBlob)
+                    const link = document.createElement('a')
+                    link.href = url
+                    link.download = filename
+                    document.body.appendChild(link)
+                    link.click()
+                    
+                    setTimeout(() => {
+                      document.body.removeChild(link)
+                      URL.revokeObjectURL(url)
+                      URL.revokeObjectURL(blobUrl)
+                      resolve()
+                    }, 100)
+                  }
+                }, 'image/png', 1.0)
+              }
+            }
+            // Para Android y otros dispositivos móviles
+            else if (isMobile) {
+              canvas.toBlob((canvasBlob) => {
+                if (canvasBlob) {
+                  const url = URL.createObjectURL(canvasBlob)
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.download = filename
+                  link.style.display = 'none'
+                  
+                  document.body.appendChild(link)
+                  link.click()
+                  
+                  setTimeout(() => {
+                    document.body.removeChild(link)
+                    URL.revokeObjectURL(url)
+                    URL.revokeObjectURL(blobUrl)
+                    resolve()
+                  }, 100)
+                } else {
+                  reject(new Error('Error generando blob'))
+                }
+              }, 'image/png', 1.0)
+            }
+            // Para desktop
+            else {
+              canvas.toBlob((canvasBlob) => {
+                if (canvasBlob) {
+                  const url = URL.createObjectURL(canvasBlob)
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.download = filename
+                  
+                  document.body.appendChild(link)
+                  link.click()
+                  document.body.removeChild(link)
+                  
+                  URL.revokeObjectURL(url)
+                  URL.revokeObjectURL(blobUrl)
+                  resolve()
+                } else {
+                  reject(new Error('Error generando blob'))
+                }
+              }, 'image/png', 1.0)
+            }
+          } catch (error) {
+            console.error('Error en canvas:', error)
+            URL.revokeObjectURL(blobUrl)
+            reject(error)
+          }
         }
         
         img.onerror = () => {
           URL.revokeObjectURL(blobUrl)
-          // Fallback: abrir en nueva pestaña
-          window.open(imageData.processed, '_blank')
+          reject(new Error('Error cargando imagen'))
         }
         
         img.src = blobUrl
-      }
-      // Para Android y otros móviles
-      else if (isMobile) {
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = filename
-        link.style.display = 'none'
-        
-        document.body.appendChild(link)
-        
-        // Forzar descarga con evento touch
-        const event = new MouseEvent('click', {
-          view: window,
-          bubbles: true,
-          cancelable: true
-        })
-        
-        link.dispatchEvent(event)
-        
-        setTimeout(() => {
-          document.body.removeChild(link)
-          URL.revokeObjectURL(url)
-        }, 100)
-      }
-      // Para desktop
-      else {
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        link.download = filename
-        
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        
-        URL.revokeObjectURL(url)
-      }
+      })
     } catch (error) {
       console.error('Error descargando imagen:', error)
-      alert('Error al descargar. Intente mantener presionada la imagen y seleccionar "Guardar imagen".')
+      alert('Error al descargar. Por favor, intente de nuevo.')
+      throw error
     }
   }
 
