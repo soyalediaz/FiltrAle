@@ -180,7 +180,7 @@ function App() {
         <p>
           Página creada por{' '}
           <a 
-            href="https://aleke.com.ar" 
+            href="https://alekey.com.ar" 
             target="_blank" 
             rel="noopener noreferrer"
             className="footer-link"
